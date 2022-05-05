@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  server:
+    build: ./server
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    ports:
+      - 8080:8080
+    volumes:
+      - ../server:/go/src/server:cached
+    working_dir: /go/src/server
+    environment:
+        - DATASTORE_EMULATOR_HOST=gcloud:8081  # datastore サービスの `$ホスト名:$ポート` を指定
+        - DATASTORE_PROJECT_ID=app  # 開発環境用のプロジェクト名
+
+  gcloud:
+    build: ./gcloud
+    tty: true
+    environment:
+      DATASTORE_PROJECT_ID: app
+      DATASTORE_LISTEN_ADDRESS: 0.0.0.0:8081
+    ports:
+      - "8081:8081"
+    volumes:
+      - gcloud_volume:/data
+
+  gcloud_gui:
+    build: ./gcloud-gui
+    ports:
+      - "8082:8000"
+    depends_on: 
+      - gcloud
+    logging:
+      driver: none
+volumes:
+  gcloud_volume:
